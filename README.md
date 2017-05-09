@@ -11,7 +11,7 @@ This project is the implementation of End to End Memory Networks to build Questi
 * re
 
 ## Architecture of End to End Memory Networks
-![alt text](images/architecture.png)
+![alt text](https://github.com/prashil2792/Question-Answering-System-Deep-Learning/blob/master/images/architecture.png)
 
 ## Results/Observations
 
