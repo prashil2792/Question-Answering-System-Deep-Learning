@@ -6,7 +6,8 @@ Trains a memory network on the facebook bAbI dataset for Question/Answering Syst
 import keras
 from keras.models import Sequential, Model
 from keras.layers.embeddings import Embedding
-from keras.layers import Input, Activation, Dense, Permute, Dropout, merge
+from keras.layers import Input, Activation, Dense, Permute, Dropout
+from keras.layers import add, dot, concatenate
 from keras.layers import LSTM, GRU
 from keras.utils.data_utils import get_file
 from keras.preprocessing.sequence import pad_sequences
@@ -203,25 +204,27 @@ print('Question encoded', question_encoded)
 # compute a 'match' between the first input vector sequence
 # and the question vector sequence
 # shape: `(samples, story_maxlen, query_maxlen)
-match = merge([input_encoded_m, question_encoded], mode='dot', dot_axes=(2, 2))
+match = dot([input_encoded_m, question_encoded], axes=(2, 2))
+print(match.shape)
 match = Activation('softmax')(match)
 print('Match shape', match)
 
 # add the match matrix with the second input vector sequence
-response = merge([match, input_encoded_c], mode='sum')  # (samples, story_maxlen, query_maxlen)
+response = add([match, input_encoded_c])  # (samples, story_maxlen, query_maxlen)
 response = Permute((2, 1))(response)  # (samples, query_maxlen, story_maxlen)
 print('Response shape', response)
 
 # concatenate the response vector with the question vector sequence
-answer = merge([response, question_encoded], mode='concat')
+answer = concatenate([response, question_encoded])
 print('Answer shape', answer)
 
+#answer = LSTM(lstm_size, return_sequences=True)(answer)  # Generate tensors of shape 32
+#answer = Dropout(0.3)(answer)
 answer = LSTM(lstm_size)(answer)  # Generate tensors of shape 32
 answer = Dropout(0.3)(answer)
 answer = Dense(vocab_size)(answer)  # (samples, vocab_size)
 # we output a probability distribution over the vocabulary
 answer = Activation('softmax')(answer)
-
 # build the final model
 model = Model([input_sequence, question], answer)
 model.compile(optimizer='adam', loss='categorical_crossentropy',
